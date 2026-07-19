@@ -14,7 +14,7 @@ COPY dev/ ./dev
 COPY .babelrc .eslintrc.yml .eslintignore ./
 
 # 编译前端（node20 才支持 --openssl-legacy-provider；限制内存防止 2G 服务器编译时爆内存）
-RUN NODE_OPTIONS="--openssl-legacy-provider --max-old-space-size=1536" \
+RUN NODE_OPTIONS="--openssl-legacy-provider --max-old-space-size=1024" \
     node ./node_modules/webpack/bin/webpack.js --profile --config dev/webpack/webpack.prod.js
 
 # 换成只装“生产依赖”（去掉 devDependencies，镜像更小、启动更快）

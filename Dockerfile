@@ -1,6 +1,9 @@
 # ============ 阶段1：编译前端 + 安装依赖 ============
 FROM node:20-alpine AS build
+# 国内镜像源加速：阿里云 apk 软件源 + 淘宝 npm 源（避免海外源龟速，2核2G 上能省几十分钟）
+RUN sed -i 's#https://dl-cdn.alpinelinux.org#https://mirrors.aliyun.com#g' /etc/apk/repositories
 RUN apk add --no-cache yarn g++ make cmake python3 git
+RUN yarn config set registry https://registry.npmmirror.com && npm config set registry https://registry.npmmirror.com
 WORKDIR /wiki
 
 # 先放依赖清单，利用 Docker 缓存加速（只有 package.json 变了才重新装）
@@ -24,6 +27,7 @@ RUN yarn patch-package
 
 # ============ 阶段2：运行时（最终只需要这个，很小） ============
 FROM node:20-alpine
+RUN sed -i 's#https://dl-cdn.alpinelinux.org#https://mirrors.aliyun.com#g' /etc/apk/repositories
 RUN apk add --no-cache bash curl git openssh gnupg sqlite
 WORKDIR /wiki
 

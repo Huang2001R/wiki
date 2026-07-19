@@ -6,7 +6,7 @@ RUN sed -i 's#https://dl-cdn.alpinelinux.org#https://mirrors.aliyun.com#g' /etc/
 # Python3.12 已移除 distutils，node-gyp 编译会报 "No module named distutils"，
 # 因此额外装 py3-setuptools 并用清华 pip 镜像升级 setuptools 以恢复 distutils 垫片
 RUN apk add --no-cache yarn g++ make cmake python3 git py3-setuptools py3-pip
-RUN pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && pip3 install --upgrade setuptools
+RUN pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && pip3 install --break-system-packages --upgrade setuptools
 RUN yarn config set registry https://registry.npmmirror.com && npm config set registry https://registry.npmmirror.com
 # 国内连 GitHub 下载预编译二进制会超时，改为全部从源码编译（依赖上面的编译工具链）
 ENV npm_config_build_from_source=true

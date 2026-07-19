@@ -280,5 +280,10 @@ module.exports = {
     entrypoints: false
   },
   target: 'web',
-  watch: true
+  watch: true,
+  watchOptions: {
+    poll: 1000,
+    aggregateTimeout: 300,
+    ignored: /node_modules/
+  }
 }

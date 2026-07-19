@@ -1,0 +1,14 @@
+services:
+  wiki:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mywiki:latest
+    container_name: mywiki
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - wiki-data:/wiki/data/content
+volumes:
+  wiki-data:

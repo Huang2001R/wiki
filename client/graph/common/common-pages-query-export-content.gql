@@ -1,0 +1,16 @@
+query ($pageId: Int!) {
+  pages {
+    exportContent(pageId: $pageId) {
+      pageId
+      title
+      path
+      locale
+      markdown
+      html
+      contentType
+      description
+      createdAt
+      updatedAt
+    }
+  }
+}

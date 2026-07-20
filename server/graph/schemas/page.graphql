@@ -51,6 +51,10 @@ type PageQuery {
     locale: String!
   ): Page @auth(requires: ["read:pages", "manage:system"])
 
+  exportContent(
+    pageId: Int!
+  ): PageExportResult @auth(requires: ["read:pages", "read:source", "manage:system"])
+
   tags: [PageTag]! @auth(requires: ["manage:system", "read:pages"])
 
   searchTags(
@@ -315,6 +319,19 @@ type PageConflictLatest {
   path: String!
   tags: [String]
   title: String!
+  updatedAt: Date!
+}
+
+type PageExportResult {
+  pageId: Int!
+  title: String!
+  path: String!
+  locale: String!
+  markdown: String
+  html: String!
+  contentType: String!
+  description: String
+  createdAt: Date!
   updatedAt: Date!
 }
 

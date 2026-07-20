@@ -150,6 +150,9 @@
                 v-list-item.pl-4(@click='pageSource', v-if='mode !== `source` && hasReadSourcePermission')
                   v-list-item-avatar(size='24', tile): v-icon(color='indigo') mdi-code-tags
                   v-list-item-title.body-2 {{$t('common:header.viewSource')}}
+                v-list-item.pl-4(@click='pageExport', v-if='mode !== `source` && hasReadSourcePermission')
+                  v-list-item-avatar(size='24', tile): v-icon(color='green') mdi-download
+                  v-list-item-title.body-2 Export Page
                 v-list-item.pl-4(@click='pageConvert', v-if='hasWritePagesPermission')
                   v-list-item-avatar(size='24', tile): v-icon(color='indigo') mdi-lightning-bolt
                   v-list-item-title.body-2 {{$t('common:header.convert')}}
@@ -242,6 +245,24 @@
     page-delete(v-model='deletePageModal', v-if='path && path.length')
     page-convert(v-model='convertPageModal', v-if='path && path.length')
 
+    v-dialog(v-model='exportModal', max-width='480')
+      v-card
+        v-card-title Export Page
+        v-card-text
+          v-list(dense, nav)
+            v-list-item(@click='downloadExport("markdown")', :disabled='!exportData || !exportData.markdown')
+              v-list-item-avatar: v-icon(color='blue') mdi-language-markdown
+              v-list-item-content
+                v-list-item-title Download as Markdown (.md)
+                v-list-item-subtitle.caption(v-if='exportData && !exportData.markdown') Source not available
+            v-list-item(@click='downloadExport("html")')
+              v-list-item-avatar: v-icon(color='orange') mdi-language-html5
+              v-list-item-content
+                v-list-item-title Download as HTML (.html)
+        v-card-actions
+          v-spacer
+          v-btn(text, @click='exportModal = false') Close
+
     .nav-header-dev(v-if='isDevMode')
       v-icon mdi-alert
       div
@@ -254,6 +275,7 @@ import { get, sync } from 'vuex-pathify'
 import _ from 'lodash'
 
 import movePageMutation from 'gql/common/common-pages-mutation-move.gql'
+import exportContentQuery from 'gql/common/common-pages-query-export-content.gql'
 
 /* global siteConfig, siteLangs */
 
@@ -287,7 +309,10 @@ export default {
         locale: 'en',
         path: 'new-page',
         modal: false
-      }
+      },
+      exportModal: false,
+      exportData: null,
+      exportLoading: false
     }
   },
   computed: {
@@ -454,6 +479,52 @@ export default {
     },
     pageDelete () {
       this.deletePageModal = true
+    },
+    pageExport () {
+      this.exportModal = true
+      this.exportData = null
+      this.exportLoading = true
+      this.$apollo.query({
+        query: exportContentQuery,
+        variables: {
+          pageId: this.$store.get('page/id')
+        },
+        fetchPolicy: 'network-only'
+      }).then(resp => {
+        this.exportData = _.get(resp, 'data.pages.exportContent', null)
+      }).catch(err => {
+        this.$store.commit('pushGraphError', err)
+      }).finally(() => {
+        this.exportLoading = false
+      })
+    },
+    downloadExport (format) {
+      if (!this.exportData) { return }
+      const data = this.exportData
+      let content, ext, mime
+      if (format === 'markdown') {
+        content = data.markdown || ''
+        ext = 'md'
+        mime = 'text/markdown'
+      } else {
+        content = this.buildHtmlDocument(data.title, data.html)
+        ext = 'html'
+        mime = 'text/html'
+      }
+      const safeName = (data.path || data.title || 'page').replace(/[\\/:*?"<>|]/g, '_')
+      const blob = new Blob([content], { type: mime + ';charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = safeName + '.' + ext
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    },
+    buildHtmlDocument (title, bodyHtml) {
+      return '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<title>' +
+        _.escape(title) + '</title>\n</head>\n<body>\n' + bodyHtml + '\n</body>\n</html>'
     },
     assets () {
       // window.location.assign(`/f`)

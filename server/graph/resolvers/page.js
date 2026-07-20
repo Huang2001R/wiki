@@ -195,6 +195,48 @@ module.exports = {
       }
     },
     /**
+     * EXPORT PAGE CONTENT (single-page export, Plan B)
+     */
+    async exportContent (obj, args, context, info) {
+      const page = await WIKI.models.pages.getPageFromDb(args.pageId)
+      if (!page) {
+        throw new WIKI.Error.PageNotFound()
+      }
+      // 需要查看页面的权限
+      if (!WIKI.auth.checkAccess(context.req.user, ['read:pages', 'read:source', 'manage:system'], {
+        path: page.path,
+        locale: page.localeCode
+      })) {
+        throw new WIKI.Error.PageViewForbidden()
+      }
+      // 渲染后的 HTML（数据库已存储），若缺失则即时渲染
+      let html = page.render
+      if (!html) {
+        await WIKI.models.pages.renderPage(page)
+        html = page.render
+      }
+      // Markdown 源码：仅当具备 read:source 或更高权限时返回
+      let markdown = null
+      if (WIKI.auth.checkAccess(context.req.user, ['read:source', 'write:pages', 'manage:system'], {
+        path: page.path,
+        locale: page.localeCode
+      })) {
+        markdown = page.content
+      }
+      return {
+        pageId: page.id,
+        title: page.title,
+        path: page.path,
+        locale: page.localeCode,
+        markdown,
+        html,
+        contentType: page.contentType,
+        description: page.description,
+        createdAt: page.createdAt,
+        updatedAt: page.updatedAt
+      }
+    },
+    /**
      * FETCH TAGS
      */
     async tags (obj, args, context, info) {
